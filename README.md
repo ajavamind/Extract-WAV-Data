@@ -12,6 +12,8 @@ https://www.audacityteam.org/download/
 The COSMAC sound data uses two cycles of 1000HZ(?) to represent a 0 bit and five cycles to represent a 1 bit.
 The files expected are COSMAC FRED and VIP data.
 
-![Screenshot of Audacity Program](Extract-WAV-Data/screenshot/waveform.png)
+Screenshot of data waveform in Audacity Sound Editor
+
+![Screenshot of data waveform in Audacity](screenshot/waveform.png)
 
 Written by Andy Modla
