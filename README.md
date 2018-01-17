@@ -1,5 +1,7 @@
 # Extract-WAV-Data
 This code is a tool used to extract RCA COSMAC byte data encoded in WAV files.
+The program is written in Processing/Java language and does use any other libraries. You will need the Processing SDK.
+You can download the Processing SDK from https://processing.org
 
 To use this program, a WAV audio file must first be converted into a signed 8-bit PCM raw data file.
 I use the sound editor "Audacity" to isolate a single channel of WAV file audio 
