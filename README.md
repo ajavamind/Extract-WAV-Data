@@ -1,15 +1,29 @@
 # Extract-WAV-Data
-This code repository provides a tool used to extract RCA COSMAC byte data encoded in WAV files.
-The program is written in the Processing/Java language and does not use any other libraries. You will need the Processing SDK to run the program tool.
+This code repository provides a procedure and tool for extracting RCA COSMAC (CDP1801 and CDP1802 microprocessor) byte data programs encoded in WAV files.
+The WAV files are digital copies of cassette tapes made in 1974-1976 by Joe Weisbecker to store COSMAC programs for 
+FRED (Flexible Recreational Educational Device), Arcade, and VIP computer systems.
+
+The Hagley Museum and Library, Wilmington, Delware, digitized the cassette tape audio to create the WAV files from the Joe Weisbecker archive accession number 2464, box 9, B41. The WAV files were purchased from the Hagley Library.
+
+The program tool processes input in the form of a single raw signed 8-bit PCM data file (no header) that contains one program.
+The WAV file from the Hagley Library is a stereo audio file recorded at a sampling rate of 96000 Hz stored as 32 bit floating point samples. The file has two copies of byte coded programs on both left and right channels. The WAV file must first be 
+converted into a raw file for input into the tool. This approach was done to simplify the programming effort needed to code the tool.
+
+## Processing/Java
+The program tool is written in the Processing/Java language and does not use any other libraries. 
+You will need the Processing SDK to run the program tool.
 You can download the Processing SDK from 
 
 https://processing.org
 
-To use this program, a WAV audio file must first be converted into a signed 8-bit PCM raw data file.
+## Audacity Sound Editor
+To use the program tool, the WAV file must first be converted into a signed 8-bit PCM raw data file for one channel and one program.
 I use the sound editor "Audacity" to isolate a single channel of WAV file audio 
-representing one COSMAC program (not copies in the WAV file)
+representing one COSMAC program (not multiple copies in the WAV file)
 and then export the isolated audio segment as a raw signed 8-bit PCM file.
 The raw file does not have the WAV file header.
+
+Audacity is available for download from
 
 https://www.audacityteam.org/download/
 
@@ -18,16 +32,18 @@ A data byte stored on the tape begins with a "1" start bit, followed by 8 data b
 A program is preceded by multiple 0 bits for synchronization, until the first start bit.
 
 ## RCA Coin Arcade Games and FRED Tape Encoding
+The COSMAC FRED 2/Arcade Game tapes sound data use two cycles of 2000 HZ to represent a 0 bit, 
+and five cycles of 2000 HZ to represent a 1 bit.
 The program tool only works for this type of data for now.
-The COSMAC Arcade Game tapes sound data use two cycles of 2000 HZ to represent a 0 bit, and five cycles of 2000 HZ to represent a 1 bit.
 
 ## COSMAC VIP Tape Encoding
-(Not tested, the tool will need to be modified for VIP tape data)
-
 The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit, and one cycle of 800 HZ to represent a 1 bit.
 
-Screenshot of Coin Arcade Game Swords data waveforms in Audacity Sound Editor
+(Not implemented in the tool, the tool will need to be modified for VIP tape data)
+
+## Coin Arcade Game Swords data waveforms in Audacity Sound Editor
 
 ![Screenshot of data waveform in Audacity](screenshot/waveform.png)
 
+## References
 Written by Andy Modla
