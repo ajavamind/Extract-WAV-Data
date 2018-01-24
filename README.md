@@ -45,5 +45,9 @@ The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit,
 
 ![Screenshot of data waveform in Audacity](screenshot/waveform.png)
 
+The above screenshot example waveform data is a "01010010101". In the waveform example the first "1" bit is a start bit, 
+and is followed by 8 data bits, and the waveform ends with a "1" parity bit.
+The byte value is hexadecimal "4A". This example assumes preceeding "0" bits before the first data byte.
+
 ## References
 Written by Andy Modla
