@@ -50,5 +50,9 @@ The above screenshot example waveform data is a "01010010101". In the waveform e
 and is followed by 8 data bits, and the waveform ends with a "1" parity bit.
 The data byte value is hexadecimal "52" (least significant bits first). This example assumes preceeding "0" bits before the first data byte.
 
+## Using Audacity Video
+
+https://www.youtube.com/embed/Jk8PiPmR7oc
+
 ## References
 Written by Andy Modla
