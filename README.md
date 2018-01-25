@@ -29,6 +29,7 @@ https://www.audacityteam.org/download/
 
 ## Data Tape Format
 A data byte stored on the tape begins with a "1" start bit, followed by 8 data bits, and ends with an odd parity bit.
+The data bits are ordered as least significant bit first.
 A program is preceded by multiple 0 bits for synchronization, until the first start bit.
 
 ## RCA Coin Arcade Games and FRED Tape Encoding
@@ -47,7 +48,7 @@ The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit,
 
 The above screenshot example waveform data is a "01010010101". In the waveform example the first "1" bit is a start bit, 
 and is followed by 8 data bits, and the waveform ends with a "1" parity bit.
-The byte value is hexadecimal "4A". This example assumes preceeding "0" bits before the first data byte.
+The data byte value is hexadecimal "52" (least significant bits first). This example assumes preceeding "0" bits before the first data byte.
 
 ## References
 Written by Andy Modla
