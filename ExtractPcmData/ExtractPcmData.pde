@@ -43,30 +43,48 @@ int runs[];
 int runCount = 0;
 byte[] samples;
 int SAMPLING_RATE = 96000;
-int BUFSIZE = 60*SAMPLING_RATE;
 
-int GAP_LOWER = -20; // SWORDS
-int GAP_UPPER = 32; // swords
-int THRESHOLD = 100;
-int SILENCE = 64; // 32  range 24 to 64
+int GAP_LOWER = -20; // swords, tag/bowl, coin bowling
+int GAP_UPPER = 32; // swords, tag/bowl, coin bowling
+int THRESHOLD = 100; // swords, tag/bowl
+int SILENCE =  64; //range 24 to 64 for swords, tag/bowl
+
+// debug variables
+int loc = 0;
+int numberStartBits = 0;
 
 String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords_left_signed_8bit_pcm.raw";
 String OUT_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.arc";
 String COMPARE_FILENAME = "test3.arc";
 
+//String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords_left_signed_8bit_pcm.raw";
+//String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.left.1.raw";
+//String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.left.1.raw";
+//String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.raw";
+//String PCM_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.raw";
+//String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.raw";
+//String OUT_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.arc";
+//String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav2.arc";
+//String OUT_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.arc";
+//String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.arc";
+//String OUT_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.arc";
+//String COMPARE_FILENAME = "test3.arc";
+//String COMPARE_FILENAME = "";
+//String COMPARE_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.arc";
+
 void setup()
 {
-  size(1024, 800);
+  size(640, 480);
 
   // Read raw signed 8-bit PCM data file 
   samples = loadBytes(PCM_FILENAME);
-  
+
   // create and clear working buffer
-  bits = new byte[BUFSIZE];
+  bits = new byte[samples.length];
   for (int i=0; i<bits.length; i++) {
     bits[i] = 0;
   }
-  
+
   // create and clear an array of runs
   runs = new int[samples.length];
   for (int i=0; i<runs.length; i++) {
@@ -79,47 +97,68 @@ void setup()
     sample = samples[i];
     if ((sample >= GAP_UPPER) || (sample <= GAP_LOWER)) {
       bits[i] = 1;
+      if (loc == 0) {
+        loc = i;
+        println("debug first location above sample range ="+hex(loc));
+      }
     }
   }
   println("bits array completed");
-  
+
   // calculate runs of bits
   calcRuns();
-  
+
   // debug output
-  //for (int i=0; i< 40; i++) {
-  //  println("run " + i+ " " +runs[i]);
-  //}
+  println("first 21 runs");
+  for (int i=0; i < 21; i++) {
+    print(" " + runs[i]);
+  }
+  println();
   
   // calculate bytes from runs expecting data sequence: (start bit, 8 data bits, odd parity bit)
   calcBinary(OUT_FILENAME);
-  
+
   // optionally compare with previous binary file created using a different pcm file
-  if (compareFiles(OUT_FILENAME, COMPARE_FILENAME))
-    println(OUT_FILENAME, " matches " + COMPARE_FILENAME);
-  else
-    println("Extraction does not match " + COMPARE_FILENAME);
-    
+  if (!COMPARE_FILENAME.equals("")) {
+    if (compareFiles(OUT_FILENAME, COMPARE_FILENAME))
+      println(OUT_FILENAME, " matches " + COMPARE_FILENAME);
+    else
+      println("Extraction does not match " + COMPARE_FILENAME);
+  }
+  else {
+    println("No File to Compare");
+  }
+
   println("Extraction completed");
+}
+
+void draw() {
+  textSize(96);
+  background(0);
+  textAlign(CENTER, CENTER);
+  text("DONE", width/2, height/2);
 }
 
 /*
  * Compare two binary files
  */
- 
 boolean compareFiles(String filename1, String filename2) {
   byte[] file1 = loadBytes(filename1);
   byte[] file2 = loadBytes(filename2);
   boolean match = true;
   if (file1.length != file2.length) {
     println("files not same length");
-    match = false;
-    return match;
+    //match = false;
+    //return match;
   }
-  for(int i=0; i< file1.length; i++) {
+  int length = file1.length;
+  if (length > file2.length)
+    length = file2.length;
+  println("compare length = "+length);
+  for (int i=0; i< length; i++) {
     if (file1[i] != file2[i]) {
       println("mismatch "+filename1 + " and " + filename2 + " at "+ i + 
-      " " + hex(file1[i]) + " " + hex(file2[i]));
+        " " + hex(file1[i]) + " " + hex(file2[i]));
       match = false;
       break;
     }
@@ -142,6 +181,7 @@ void calcBinary(String filename) {
     }
     // start bit
     if (runs[i] >= THRESHOLD) {
+      numberStartBits++;
       int value = 0;
       int parity = 1;
       for (int j=0; j<8; j++) {
@@ -155,11 +195,11 @@ void calcBinary(String filename) {
       data[counter++] = (byte) value;
       if (runs[i] > THRESHOLD) {
         if (parity != 1) {
-          println("ROM "+ hex(counter-1) + " "+ hex(value) + " parity 0 error "+i+" "+ runs[i]);
+          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 0 expected "+i+" "+ runs[i]);
         }
       } else {
         if (parity != 0) {
-          println("ROM "+ hex(counter-1) + " "+ hex(value) + " parity 1 error "+i+" "+ runs[i]);
+          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 1 expected "+i+" "+ runs[i]);
         }
       }
       i++;
@@ -170,17 +210,26 @@ void calcBinary(String filename) {
     if (counter == 2048)  // assume data does not exceed this value
       break;
   }
-  
+
+  println("number of start bits "+numberStartBits);
   println("ROM size = "+counter);
+  
+  // show first and last bytes
+  print("addr "+hexAddr(0)+ " | ");
   for (int k=0; k< 16; k++) {
-    print(hex(data[k]));
+    print(hexData(data[k])+" ");
   }
   println();
-  
+  print("addr "+hexAddr(counter-16) + " | ");
+  for (int k=0; k< 16; k++) {
+    print(hexData(data[counter -16 + k])+" ");
+  }
+  println();
+
   rom = new byte[counter];
   for (int k=0; k<counter; k++)
     rom[k] = data[k];
-    
+
   saveBytes(filename, rom);
 }
 
@@ -208,4 +257,14 @@ void calcRuns() {
       }
     }
   }
+}
+
+String hexAddr(int addr) {
+  String val = hex(addr).substring(4);
+  return val;
+}
+
+String hexData(int data) {
+  String val = hex(data).substring(6);
+  return val;
 }
