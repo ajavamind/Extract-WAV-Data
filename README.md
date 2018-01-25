@@ -56,6 +56,10 @@ There are easier ways to use Audacity but the steps I talk about in the video ge
 I noticed some tapes only have 2047 bytes stored, so the 2048th byte is sometimes interpreted as garbage,
 depending on how the trailing audio is trimmed.
 
+After isolating a single program segment, the important step for Audacity is to normalize the data with amplification level -4.0 dB. 
+And make sure the sampling rate is set to 96000 Hz (bottom left corner of Audacity window) 
+when exporting a raw 8-bit PCM data file.
+
 https://youtu.be/AfX4LBK-_JA
 
 ## References
