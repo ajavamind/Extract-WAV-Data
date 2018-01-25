@@ -52,7 +52,7 @@ The data byte value is hexadecimal "52" (least significant bits first). This exa
 
 ## Using Audacity Video
 
-https://www.youtube.com/embed/Jk8PiPmR7oc
+https://youtu.be/AfX4LBK-_JA
 
 ## References
 Written by Andy Modla
