@@ -42,9 +42,9 @@ The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit,
 
 (Not implemented in the tool, the tool will need to be modified for VIP tape data)
 
-## Coin Arcade Game Swords data waveforms in Audacity Sound Editor
+## Example Data Waveform in Audacity Sound Editor
 
-![Screenshot of data waveform in Audacity](screenshot/waveform.png)
+![Screenshot of Data Waveform in Audacity](screenshot/waveform.png)
 
 The above screenshot example waveform data is a "01010010101". In the waveform example the first "1" bit is a start bit, 
 and is followed by 8 data bits, and the waveform ends with a "1" parity bit.
