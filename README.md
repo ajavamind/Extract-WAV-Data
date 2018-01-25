@@ -51,6 +51,10 @@ and is followed by 8 data bits, and the waveform ends with a "1" parity bit.
 The data byte value is hexadecimal "52" (least significant bits first). This example assumes preceeding "0" bits before the first data byte.
 
 ## Using Audacity Video
+Here is a link to video explaining how I used Audacity to help with the WAV data extraction process.
+There are easier ways to use Audacity but the steps I talk about in the video get the job done.
+I noticed some tapes only have 2047 bytes stored, so the 2048th byte is sometimes interpreted as garbage,
+depending on how the trailing audio is trimmed.
 
 https://youtu.be/AfX4LBK-_JA
 
