@@ -42,12 +42,38 @@ boolean done = false;
 int runs[];
 int runCount = 0;
 byte[] samples;
-int SAMPLING_RATE = 96000;
 
+static final int COSMAC_FRED_FORMAT = 1;
+static final int COSMAC_VIP_FORMAT = 2;
+
+int SAMPLING_RATE = 96000;
 int GAP_LOWER = -20; // swords, tag/bowl, coin bowling
 int GAP_UPPER = 32; // swords, tag/bowl, coin bowling
 int THRESHOLD = 100; // swords, tag/bowl
-int SILENCE =  64; //range 24 to 64 for swords, tag/bowl
+int SILENCE_GAP =  64; //range 24 to 64 for swords, tag/bowl
+
+void calcThreshold(int format) {
+  if (format == COSMAC_FRED_FORMAT) { //<>//
+    int FRED_CYCLES_PER_SECOND = 2000; 
+    int SAMPLES_PER_CYCLE = SAMPLING_RATE / FRED_CYCLES_PER_SECOND;
+    int GAP_SAMPLES_PER_CYCLE = (2*SAMPLES_PER_CYCLE)/3;
+    int ONE_BIT = 5*GAP_SAMPLES_PER_CYCLE;
+    int ZERO_BIT = 2*GAP_SAMPLES_PER_CYCLE;
+    SILENCE_GAP = SAMPLES_PER_CYCLE;
+    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;
+  }
+  else {
+    // COSMAC_VIP format
+    int VIP_ZERO_CYCLES_PER_SECOND = 2000; 
+    int VIP_ONE_CYCLES_PER_SECOND = 800; 
+    int ZERO_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ZERO_CYCLES_PER_SECOND;
+    int ONE_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ONE_CYCLES_PER_SECOND;
+    int ONE_BIT = (2*(ONE_BIT_SAMPLES_PER_CYCLE))/3;
+    int ZERO_BIT = (2*(ZERO_BIT_SAMPLES_PER_CYCLE))/3;
+    SILENCE_GAP = ZERO_BIT_SAMPLES_PER_CYCLE/4;
+    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;    
+  }
+}
 
 // debug variables
 int loc = 0;
@@ -59,7 +85,6 @@ String COMPARE_FILENAME = "test3.arc";
 
 //String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords_left_signed_8bit_pcm.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.left.1.raw";
-//String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.left.1.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.raw";
@@ -67,15 +92,18 @@ String COMPARE_FILENAME = "test3.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav2.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.arc";
-//String OUT_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.arc";
 //String COMPARE_FILENAME = "test3.arc";
 //String COMPARE_FILENAME = "";
 //String COMPARE_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.arc";
+
 
 void setup()
 {
   size(640, 480);
 
+  calcThreshold(COSMAC_FRED_FORMAT);
+  println("THRESHOLD="+THRESHOLD + " SILENCE_GAP="+SILENCE_GAP);
+  
   // Read raw signed 8-bit PCM data file 
   samples = loadBytes(PCM_FILENAME);
 
@@ -155,12 +183,15 @@ boolean compareFiles(String filename1, String filename2) {
   if (length > file2.length)
     length = file2.length;
   println("compare length = "+length);
+  int counter = 8;
   for (int i=0; i< length; i++) {
     if (file1[i] != file2[i]) {
       println("mismatch "+filename1 + " and " + filename2 + " at "+ i + 
         " " + hex(file1[i]) + " " + hex(file2[i]));
       match = false;
-      break;
+      counter--;
+      if (counter == 0)
+        break;
     }
   }
   return match;
@@ -195,11 +226,11 @@ void calcBinary(String filename) {
       data[counter++] = (byte) value;
       if (runs[i] > THRESHOLD) {
         if (parity != 1) {
-          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 0 expected "+i+" "+ runs[i]);
+          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 0 expected ");
         }
       } else {
         if (parity != 0) {
-          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 1 expected "+i+" "+ runs[i]);
+          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 1 expected ");
         }
       }
       i++;
@@ -242,7 +273,7 @@ void calcRuns() {
   for (int i=0; i<bits.length; i++) {
     if (bits[i] == 0 ) {
       numz++;
-      if (numz > SILENCE && (!flag)) {
+      if (numz > SILENCE_GAP && (!flag)) {
         value = last-first;
         runs[runCount++] = value;
         flag = true;
