@@ -28,27 +28,28 @@ Audacity is available for download from
 https://www.audacityteam.org/download/
 
 ## Data Tape Format
-A data byte stored on the tape begins with a "1" start bit, followed by 8 data bits, and ends with an odd parity bit.
+A data byte stored on the tape begins with a "1" start bit, followed by 8 data bits, and ends with an parity bit.
 The data bits are ordered as least significant bit first.
-A program is preceded by multiple 0 bits for synchronization, until the first start bit.
+A program may be preceded by multiple 0 bits for synchronization, until the first start bit.
 
 ## RCA Coin Arcade Games and FRED Tape Encoding
 The COSMAC FRED 2/Arcade Game tapes sound data use two cycles of 2000 HZ to represent a 0 bit, 
 and five cycles of 2000 HZ to represent a 1 bit.
-The program tool only works for this type of data for now.
+This tape format uses even parity.
 
 ## COSMAC VIP Tape Encoding
-The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit, and one cycle of 800 HZ to represent a 1 bit.
-
-(Not implemented in the tool, the tool will need to be modified for VIP tape data)
+The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit, 
+and one cycle of 800 HZ to represent a 1 bit.
+This tape format uses odd parity.
 
 ## Example Data Waveform in Audacity Sound Editor
 
 ![Screenshot of Data Waveform in Audacity](screenshot/waveform.png)
 
 The above screenshot example waveform data is a "01010010101". In the waveform example the first "1" bit is a start bit, 
-and is followed by 8 data bits, and the waveform ends with a "1" parity bit.
-The data byte value is hexadecimal "52" (least significant bits first). This example assumes preceeding "0" bits before the first data byte.
+and is followed by 8 data bits, and the waveform ends with a "1" parity bit (even parity).
+The data byte value is hexadecimal "52" (least significant bits first). 
+This example assumes preceeding "0" bits before the first data byte.
 
 ## Using Audacity Video
 Here is a link to video explaining how I used Audacity to help with the WAV data extraction process.

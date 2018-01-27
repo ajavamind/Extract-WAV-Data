@@ -1,4 +1,4 @@
-// MIT License //<>//
+// MIT License //<>// //<>//
 //
 // Copyright (c) 2017-2018 Andrew Modla
 //
@@ -45,6 +45,9 @@ byte[] samples;
 
 static final int COSMAC_FRED_FORMAT = 1;
 static final int COSMAC_VIP_FORMAT = 2;
+int TAPE_FORMAT = COSMAC_FRED_FORMAT; //COSMAC_VIP_FORMAT;
+
+boolean oddParity = false;
 
 int SAMPLING_RATE = 96000;
 int GAP_LOWER = -20; // swords, tag/bowl, coin bowling
@@ -53,7 +56,7 @@ int THRESHOLD = 100; // swords, tag/bowl
 int SILENCE_GAP =  64; //range 24 to 64 for swords, tag/bowl
 
 void calcThreshold(int format) {
-  if (format == COSMAC_FRED_FORMAT) { //<>//
+  if (format == COSMAC_FRED_FORMAT) {
     int FRED_CYCLES_PER_SECOND = 2000; 
     int SAMPLES_PER_CYCLE = SAMPLING_RATE / FRED_CYCLES_PER_SECOND;
     int GAP_SAMPLES_PER_CYCLE = (2*SAMPLES_PER_CYCLE)/3;
@@ -61,34 +64,35 @@ void calcThreshold(int format) {
     int ZERO_BIT = 2*GAP_SAMPLES_PER_CYCLE;
     SILENCE_GAP = SAMPLES_PER_CYCLE;
     THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;
-  }
-  else {
+    oddParity = false;
+    println("THRESHOLD="+THRESHOLD + " SILENCE_GAP="+SILENCE_GAP);
+  } else {
     // COSMAC_VIP format
     int VIP_ZERO_CYCLES_PER_SECOND = 2000; 
     int VIP_ONE_CYCLES_PER_SECOND = 800; 
     int ZERO_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ZERO_CYCLES_PER_SECOND;
     int ONE_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ONE_CYCLES_PER_SECOND;
-    int ONE_BIT = (2*(ONE_BIT_SAMPLES_PER_CYCLE))/3;
-    int ZERO_BIT = (2*(ZERO_BIT_SAMPLES_PER_CYCLE))/3;
-    SILENCE_GAP = ZERO_BIT_SAMPLES_PER_CYCLE/4;
-    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;    
+    int ONE_BIT = ONE_BIT_SAMPLES_PER_CYCLE;
+    int ZERO_BIT = ZERO_BIT_SAMPLES_PER_CYCLE;
+    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;
+    oddParity = true;
+    println("THRESHOLD="+THRESHOLD );
   }
 }
 
 // debug variables
 int loc = 0;
-int numberStartBits = 0;
 
 String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords_left_signed_8bit_pcm.raw";
 String OUT_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.arc";
 String COMPARE_FILENAME = "test3.arc";
 
-//String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords_left_signed_8bit_pcm.raw";
+//String PCM_FILENAME = "AUD_2464_09_B41_ID05_01 180 Space War (S2-A3) 512 Bytes.wav.VIP.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.left.1.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.raw";
-//String OUT_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.arc";
+//String OUT_FILENAME = "AUD_2464_09_B41_ID05_01 180 Space War (S2-A3) 512 Bytes.wav.VIP.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav2.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.arc";
@@ -101,11 +105,14 @@ void setup()
 {
   size(640, 480);
 
-  calcThreshold(COSMAC_FRED_FORMAT);
-  println("THRESHOLD="+THRESHOLD + " SILENCE_GAP="+SILENCE_GAP);
-  
+  calcThreshold(TAPE_FORMAT);
+
   // Read raw signed 8-bit PCM data file 
   samples = loadBytes(PCM_FILENAME);
+
+  //for (int i=0; i<50; i++) { //<>//
+  //  println(samples[i]);
+  //}
 
   // create and clear working buffer
   bits = new byte[samples.length];
@@ -119,6 +126,123 @@ void setup()
     runs[i] = 0;
   }
 
+  // calculate runs of bits
+  if (TAPE_FORMAT == COSMAC_FRED_FORMAT) {
+    calcRuns();
+  } else {
+    calcZeroCrossings();
+  }
+
+  // debug output
+  println("Runs");
+  for (int j=0; j < 4; j++) {
+    for (int i=0; i < 16; i++) {
+      print(" " + runs[i + 16*j]);
+    }
+    println();
+  }
+
+  // calculate bytes from runs expecting data sequence: (start bit, 8 data bits, parity bit)
+  calcBinary(OUT_FILENAME, oddParity, 2048);
+
+  // optionally compare with previous binary file created using a different pcm file
+  if (!COMPARE_FILENAME.equals("")) {
+    if (compareFiles(OUT_FILENAME, COMPARE_FILENAME))
+      println(OUT_FILENAME, " matches " + COMPARE_FILENAME);
+    else
+      println("Extraction does not match " + COMPARE_FILENAME);
+  } else {
+    println("No File to Compare");
+  }
+
+  println("Extraction completed");
+}
+
+void draw() {
+  textSize(96);
+  background(0);
+  textAlign(CENTER, CENTER);
+  text("DONE", width/2, height/2);
+}
+
+/*
+ * Calculate byte data from runs
+ */
+void calcBinary(String filename, boolean oddParity, int maxSize) {
+  byte[] rom;
+  byte[] data = new byte[runs.length/8];
+  int counter = 0;
+  int i = 1;
+  int numberStartBits = 0;
+  int sum = 1;
+  if (oddParity)
+    sum = 0;
+
+  while ( i<runs.length) {
+    if (numberStartBits == 0) {
+      if (runs[i] < THRESHOLD) {
+        i++;
+        continue;
+      }
+    }
+    // start bit
+    if (runs[i] >= THRESHOLD) {
+      numberStartBits++;
+      int value = 0;
+      int parity = 1;
+      for (int j=0; j<8; j++) {
+        value >>= 1;
+        if (runs[i+j+1] >= THRESHOLD) {
+          value |= 0x0080;
+          parity ^= 1;
+        }
+      }
+      i += 9;
+      data[counter++] = (byte) value;
+      if (runs[i] >= THRESHOLD) {
+        if (parity != sum) {
+          println("Parity Error at ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 1");
+          break;
+        }
+      } else {
+        if (parity == sum) {
+          println("Parity Error at ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 0");
+          break;
+        }
+      }
+      i++;
+    } else {
+      println("start bit error "+ i + " "+ runs[i]);
+      break;
+    }
+    if (counter == maxSize)  // assume data does not exceed this value
+      break;
+  }
+
+  println("number of start bits "+numberStartBits);
+  println("ROM size = "+counter);
+
+  // show first and last bytes
+  print("addr "+hexAddr(0)+ " | ");
+  for (int k=0; k< 16; k++) {
+    print(hexData(data[k])+" ");
+  }
+  println();
+  print("addr "+hexAddr(counter-16) + " | ");
+  for (int k=0; k< 16; k++) {
+    if ((counter -16 + k) >= 0)
+      print(hexData(data[counter -16 + k])+" ");
+  }
+  println();
+
+  rom = new byte[counter];
+  for (int k=0; k<counter; k++)
+    rom[k] = data[k];
+
+  saveBytes(filename, rom);
+}
+
+void calcRuns() {
   // produce a 1 if pcm signed sample is within a given range
   int sample;
   for (int i = 0; i < samples.length; i++) {
@@ -133,38 +257,45 @@ void setup()
   }
   println("bits array completed");
 
-  // calculate runs of bits
-  calcRuns();
-
-  // debug output
-  println("first 21 runs");
-  for (int i=0; i < 21; i++) {
-    print(" " + runs[i]);
+  int value = 0;
+  int numz = 0;
+  int first =0;
+  int last = 0;
+  boolean flag = false;
+  for (int i=0; i<bits.length; i++) {
+    if (bits[i] == 0 ) {
+      numz++;
+      if (numz > SILENCE_GAP && (!flag)) {
+        value = last-first;
+        runs[runCount++] = value;
+        flag = true;
+      }
+    } else {
+      numz = 0;
+      if (flag) {
+        first = i;
+        flag = false;
+      } else {
+        last = i;
+      }
+    }
   }
-  println();
-  
-  // calculate bytes from runs expecting data sequence: (start bit, 8 data bits, odd parity bit)
-  calcBinary(OUT_FILENAME);
-
-  // optionally compare with previous binary file created using a different pcm file
-  if (!COMPARE_FILENAME.equals("")) {
-    if (compareFiles(OUT_FILENAME, COMPARE_FILENAME))
-      println(OUT_FILENAME, " matches " + COMPARE_FILENAME);
-    else
-      println("Extraction does not match " + COMPARE_FILENAME);
-  }
-  else {
-    println("No File to Compare");
-  }
-
-  println("Extraction completed");
 }
 
-void draw() {
-  textSize(96);
-  background(0);
-  textAlign(CENTER, CENTER);
-  text("DONE", width/2, height/2);
+void calcZeroCrossings() {
+  int sample;
+  int prevSample = 0;
+  int value = 0;
+  int last = 0;
+  for (int i = 0; i < samples.length; i++) {
+    sample = samples[i];
+    if ((prevSample < 0) && (sample >= prevSample) && (sample >= 0)) {
+      value = i - last;
+      last = i;
+      runs[runCount++] = value;
+    }
+    prevSample = sample;
+  }
 }
 
 /*
@@ -195,99 +326,6 @@ boolean compareFiles(String filename1, String filename2) {
     }
   }
   return match;
-}
-
-/*
- * Calculate byte data from runs
- */
-void calcBinary(String filename) {
-  byte[] rom;
-  byte[] data = new byte[runs.length/8];
-  int counter = 0;
-  int i = 1;
-  while ( i<runs.length) {
-    if (runs[i] == 0) {
-      i++;
-      continue;
-    }
-    // start bit
-    if (runs[i] >= THRESHOLD) {
-      numberStartBits++;
-      int value = 0;
-      int parity = 1;
-      for (int j=0; j<8; j++) {
-        value >>= 1;
-        if (runs[i+j+1] > THRESHOLD) {
-          value |= 0x0080;
-          parity ^= 1;
-        }
-      }
-      i += 9;
-      data[counter++] = (byte) value;
-      if (runs[i] > THRESHOLD) {
-        if (parity != 1) {
-          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 0 expected ");
-        }
-      } else {
-        if (parity != 0) {
-          println("Error ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 1 expected ");
-        }
-      }
-      i++;
-    } else {
-      println("start bit error "+ i + " "+ runs[i]);
-      break;
-    }
-    if (counter == 2048)  // assume data does not exceed this value
-      break;
-  }
-
-  println("number of start bits "+numberStartBits);
-  println("ROM size = "+counter);
-  
-  // show first and last bytes
-  print("addr "+hexAddr(0)+ " | ");
-  for (int k=0; k< 16; k++) {
-    print(hexData(data[k])+" ");
-  }
-  println();
-  print("addr "+hexAddr(counter-16) + " | ");
-  for (int k=0; k< 16; k++) {
-    print(hexData(data[counter -16 + k])+" ");
-  }
-  println();
-
-  rom = new byte[counter];
-  for (int k=0; k<counter; k++)
-    rom[k] = data[k];
-
-  saveBytes(filename, rom);
-}
-
-void calcRuns() {
-  int value = 0;
-  int numz = 0;
-  int first =0;
-  int last = 0;
-  boolean flag = false;
-  for (int i=0; i<bits.length; i++) {
-    if (bits[i] == 0 ) {
-      numz++;
-      if (numz > SILENCE_GAP && (!flag)) {
-        value = last-first;
-        runs[runCount++] = value;
-        flag = true;
-      }
-    } else {
-      numz = 0;
-      if (flag) {
-        first = i;
-        flag = false;
-      } else {
-        last = i;
-      }
-    }
-  }
 }
 
 String hexAddr(int addr) {
