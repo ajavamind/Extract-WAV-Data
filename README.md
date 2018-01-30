@@ -46,7 +46,7 @@ This tape format uses odd parity.
 
 ![Screenshot of Data Waveform in Audacity](screenshot/waveform.png)
 
-The above screenshot example waveform data is a "01010010101". In the waveform example the first "1" bit is a start bit, 
+The above screenshot example of Arcade/FRED waveform data is a "01010010101". In the waveform example the first "1" bit is a start bit, 
 and is followed by 8 data bits, and the waveform ends with a "1" parity bit (even parity).
 The data byte value is hexadecimal "52" (least significant bits first). 
 This example assumes preceeding "0" bits before the first data byte.
@@ -59,18 +59,21 @@ depending on how the trailing audio is trimmed.
 
 After isolating a single program segment, sometimes the waveform needs to be improved. Here are two possible choices depending on the digitized source:
 
-1. Use Audacity Effect options to Normalize the data to remove DC offset and set maximum amplification level -4.0 dB.  
+1. Use Audacity Effect options to Normalize Arcade and FRED format data to remove DC offset 
+and set maximum amplification level -4.0 dB.  
 OR  
-2. If the VIP program wav file has problems with low amplitude 2000 Hz high tones, do the following steps in Audacity.  
+2. If the VIP program WAV file has problems with low amplitude 2000 Hz high tones, do the following steps in Audacity.  
   A) After selecting the wave form, run the High pass filter at 2000 Hz with 6dB rolloff.   
   B) Next Normalize the selection to remove DC offset and set maximum amplitude to 0 dB.  
 
 Make sure the project sampling rate is set to 96000 Hz (bottom left corner of Audacity window) 
 when exporting a raw PCM data files. In Audacity to save a __signed 8-bit PCM raw__ file, you have to export your selection.
-Use File->Export->Export As WAV, then change "save as type" to other uncompressed files.
+Use File->Export->Export As WAV, then change "save as type" to "other uncompressed files".
 Pick raw (headerless) and signed 8-bit PCM data.
 
 https://youtu.be/AfX4LBK-_JA
 
 ## References
 Written by Andy Modla
+
+Copyright 2018 Andrew Modla
