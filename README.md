@@ -57,9 +57,18 @@ There are easier ways to use Audacity but the steps I talk about in the video ge
 I noticed some tapes only have 2047 bytes stored, so the 2048th byte is sometimes interpreted as garbage,
 depending on how the trailing audio is trimmed.
 
-After isolating a single program segment, the important step for Audacity is to normalize the data with amplification level -4.0 dB. 
-And make sure the sampling rate is set to 96000 Hz (bottom left corner of Audacity window) 
-when exporting a raw 8-bit PCM data file.
+After isolating a single program segment, sometimes the waveform needs to be improved. Here are two possible choices depending on the digitized source:
+
+1. Use Audacity Effect options to Normalize the data to remove DC offset and set maximum amplification level -4.0 dB.  
+OR  
+2. If the VIP program wav file has problems with low amplitude 2000 Hz high tones, do the following steps in Audacity.  
+  A) After selecting the wave form, run the High pass filter at 2000 Hz with 6dB rolloff.   
+  B) Next Normalize the selection to remove DC offset and set maximum amplitude to 0 dB.  
+
+Make sure the project sampling rate is set to 96000 Hz (bottom left corner of Audacity window) 
+when exporting a raw PCM data files. In Audacity to save a __signed 8-bit PCM raw__ file, you have to export your selection.
+Use File->Export->Export As WAV, then change "save as type" to other uncompressed files.
+Pick raw (headerless) and signed 8-bit PCM data.
 
 https://youtu.be/AfX4LBK-_JA
 
