@@ -37,69 +37,87 @@
  * and then exported as a signed 8-bit PCM raw data file.
  */
 
-byte[] bits;
-boolean done = false;
-int runs[];
-int runCount = 0;
-byte[] samples;
+///////////////////////////////////////////////////////////////////////////////
+// Change these variables to match the WAV data being extracted
 
 static final int COSMAC_FRED_FORMAT = 1;
 static final int COSMAC_VIP_FORMAT = 2;
+// Select the tape format:
 int TAPE_FORMAT = COSMAC_FRED_FORMAT; //COSMAC_VIP_FORMAT;
 
-boolean oddParity = false;
+// Expected ROM size
+//int ROM_SIZE = 0x300;    // 768
+//int ROM_SIZE = 0x700;  // 1792
+// Select the ROM/Program size expected
+int ROM_SIZE = 0x800;  // 2048
 
-int SAMPLING_RATE = 96000;
-int GAP_LOWER = -20; // swords, tag/bowl, coin bowling
-int GAP_UPPER = 32; // swords, tag/bowl, coin bowling
-int THRESHOLD = 100; // swords, tag/bowl
-int SILENCE_GAP =  64; //range 24 to 64 for swords, tag/bowl
+// Set the phase variable for VIP encoded data
+boolean risingEdge = true; // most often used
+//boolean risingEdge = false; // phase reversal
 
-void calcThreshold(int format) {
-  if (format == COSMAC_FRED_FORMAT) {
-    int FRED_CYCLES_PER_SECOND = 2000; 
-    int SAMPLES_PER_CYCLE = SAMPLING_RATE / FRED_CYCLES_PER_SECOND;
-    int GAP_SAMPLES_PER_CYCLE = (2*SAMPLES_PER_CYCLE)/3;
-    int ONE_BIT = 5*GAP_SAMPLES_PER_CYCLE;
-    int ZERO_BIT = 2*GAP_SAMPLES_PER_CYCLE;
-    SILENCE_GAP = SAMPLES_PER_CYCLE;
-    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;
-    oddParity = false;
-    println("THRESHOLD="+THRESHOLD + " SILENCE_GAP="+SILENCE_GAP);
-  } else {
-    // COSMAC_VIP format
-    int VIP_ZERO_CYCLES_PER_SECOND = 2000; 
-    int VIP_ONE_CYCLES_PER_SECOND = 800; 
-    int ZERO_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ZERO_CYCLES_PER_SECOND;
-    int ONE_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ONE_CYCLES_PER_SECOND;
-    int ONE_BIT = ONE_BIT_SAMPLES_PER_CYCLE;
-    int ZERO_BIT = ZERO_BIT_SAMPLES_PER_CYCLE;
-    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;
-    oddParity = true;
-    println("THRESHOLD="+THRESHOLD );
-  }
-}
+// Set Input, Output, and optional Compare Filename
+// PCM_FILENAME, OUT_FILENAME, COMPARE_FILENAME
+// Comment out duplicate names
 
-// debug variables
-int loc = 0;
+//String PCM_FILENAME = "S.572.2 special_1_of_16_VIP_bowling.wav_normal-4dB.raw"; // rising edge false
+//String OUT_FILENAME = "S.572.2 special_1_of_16_VIP_bowling.wav_normal-4dB.raw.vip";
+
+//String PCM_FILENAME = "S.572_1_of_16_VIP_bowling.wav_normal-4dB.raw";  // rising edge true
+//String OUT_FILENAME = "S.572_1_of_16_VIP_bowling.wav_normal-4dB.raw.vip";
+
+//String PCM_FILENAME = "S.572.3 side b.wav_vip_bowling_normalize_-4db.raw";
+//String OUT_FILENAME = "S.572.3 side b.wav_vip_bowling_normalize_-4db.raw.vip";
+
+//String PCM_FILENAME = "S.572.2.special.wav_1_of_16_edit_high_pass_normalize_0dB.raw";
+//String OUT_FILENAME = "S.572.2.special.wav_1_of_16_edit_high_pass_normalize_0dB.vip";
+
+//String PCM_FILENAME = "S.572.2.special.wav_1_of_16.raw";
+//String OUT_FILENAME = "S.572.2.special.wav_1_of_16.raw.vip";
+
+//String COMPARE_FILENAME = "";
+
+//String PCM_FILENAME = "S.572.2 VIP special-1_of_5.wav_edit.raw";  // high pass filter, normalize
+//String OUT_FILENAME = "S.572.2 VIP special-1_of_5.wav.vip";
+
+//String PCM_FILENAME = "S.572_16_of_16.wav.raw";
+//String OUT_FILENAME = "S.572_16_of_16.wav.raw.vip";
 
 String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords_left_signed_8bit_pcm.raw";
 String OUT_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.arc";
 String COMPARE_FILENAME = "test3.arc";
 
 //String PCM_FILENAME = "AUD_2464_09_B41_ID05_01 180 Space War (S2-A3) 512 Bytes.wav.VIP.raw";
+//String OUT_FILENAME = "AUD_2464_09_B41_ID05_01 180 Space War (S2-A3) 512 Bytes.wav.VIP.arc";
+
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.left.1.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.raw";
 //String PCM_FILENAME = "AUD_2464_09_B41_ID01_02 Swords.wav.raw";
-//String OUT_FILENAME = "AUD_2464_09_B41_ID05_01 180 Space War (S2-A3) 512 Bytes.wav.VIP.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav2.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_02 Coin Bowling X2 10 Frames.wav.arc";
 //String OUT_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.arc";
-//String COMPARE_FILENAME = "test3.arc";
-//String COMPARE_FILENAME = "";
 //String COMPARE_FILENAME = "AUD_2464_09_B41_ID02_01 Coin Bowling.wav.arc";
 
+///////////////////////////////////////////////////////////////////////////////
+
+// Working variables do not change
+int SAMPLING_RATE = 96000;
+int GAP_LOWER = -20; // swords, tag/bowl, coin bowling
+int GAP_UPPER = 32; // swords, tag/bowl, coin bowling
+int THRESHOLD = 100; // swords, tag/bowl
+int SILENCE_GAP =  64; //range 24 to 64 for swords, tag/bowl
+
+byte[] bits;
+boolean done = false;
+int runs[];
+int runCount = 0;
+byte[] samples;
+boolean oddParity = false;
+
+// debug variables
+int loc = 0;
+
+////////////////////////////////////////////////////////////////////////////////
 
 void setup()
 {
@@ -110,6 +128,7 @@ void setup()
   // Read raw signed 8-bit PCM data file 
   samples = loadBytes(PCM_FILENAME);
 
+  // debug
   //for (int i=0; i<50; i++) { //<>//
   //  println(samples[i]);
   //}
@@ -130,7 +149,7 @@ void setup()
   if (TAPE_FORMAT == COSMAC_FRED_FORMAT) {
     calcRuns();
   } else {
-    calcZeroCrossings();
+    calcZeroCrossings(0);
   }
 
   // debug output
@@ -143,7 +162,7 @@ void setup()
   }
 
   // calculate bytes from runs expecting data sequence: (start bit, 8 data bits, parity bit)
-  calcBinary(OUT_FILENAME, oddParity, 2048);
+  calcBinary(OUT_FILENAME, oddParity, ROM_SIZE);
 
   // optionally compare with previous binary file created using a different pcm file
   if (!COMPARE_FILENAME.equals("")) {
@@ -158,6 +177,31 @@ void setup()
   println("Extraction completed");
 }
 
+void calcThreshold(int format) {
+  if (format == COSMAC_FRED_FORMAT) {
+    int FRED_CYCLES_PER_SECOND = 2000; 
+    int SAMPLES_PER_CYCLE = SAMPLING_RATE / FRED_CYCLES_PER_SECOND;
+    int GAP_SAMPLES_PER_CYCLE = (2*SAMPLES_PER_CYCLE)/3;
+    int ONE_BIT = 5*GAP_SAMPLES_PER_CYCLE;
+    int ZERO_BIT = 2*GAP_SAMPLES_PER_CYCLE;
+    SILENCE_GAP = SAMPLES_PER_CYCLE;
+    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;
+    oddParity = false;
+    println("FRED 2 THRESHOLD="+THRESHOLD + " SILENCE_GAP="+SILENCE_GAP);
+  } else {
+    // COSMAC_VIP format
+    int VIP_ZERO_CYCLES_PER_SECOND = 2000; 
+    int VIP_ONE_CYCLES_PER_SECOND = 800; 
+    int ZERO_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ZERO_CYCLES_PER_SECOND;
+    int ONE_BIT_SAMPLES_PER_CYCLE = SAMPLING_RATE / VIP_ONE_CYCLES_PER_SECOND;
+    int ONE_BIT = ONE_BIT_SAMPLES_PER_CYCLE;
+    int ZERO_BIT = ZERO_BIT_SAMPLES_PER_CYCLE;
+    THRESHOLD = ZERO_BIT + (ONE_BIT - ZERO_BIT)/2;
+    oddParity = true;
+    println("COSMAC VIP THRESHOLD="+THRESHOLD );
+  }
+}
+
 void draw() {
   textSize(96);
   background(0);
@@ -169,6 +213,7 @@ void draw() {
  * Calculate byte data from runs
  */
 void calcBinary(String filename, boolean oddParity, int maxSize) {
+  int errorLimit = 8;
   byte[] rom;
   byte[] data = new byte[runs.length/8];
   int counter = 0;
@@ -202,12 +247,16 @@ void calcBinary(String filename, boolean oddParity, int maxSize) {
       if (runs[i] >= THRESHOLD) {
         if (parity != sum) {
           println("Parity Error at ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 1");
-          break;
+          errorLimit--;
+          if (errorLimit == 0)
+            break;
         }
       } else {
         if (parity == sum) {
           println("Parity Error at ROM Address: "+ hexAddr(counter-1) + " value "+ hexData(value) + " parity 0");
-          break;
+          errorLimit--;
+          if (errorLimit == 0)
+            break;
         }
       }
       i++;
@@ -238,8 +287,14 @@ void calcBinary(String filename, boolean oddParity, int maxSize) {
   rom = new byte[counter];
   for (int k=0; k<counter; k++)
     rom[k] = data[k];
-
-  saveBytes(filename, rom);
+    
+  if (counter == ROM_SIZE) {
+    println("SIZE=0x"+ hexAddr(maxSize) +" Writing Program file: "+filename);
+    saveBytes(filename, rom);
+  }
+  else {
+    println("No ROM file written");
+  }
 }
 
 void calcRuns() {
@@ -282,14 +337,19 @@ void calcRuns() {
   }
 }
 
-void calcZeroCrossings() {
+void calcZeroCrossings(int offset) {
   int sample;
   int prevSample = 0;
   int value = 0;
   int last = 0;
   for (int i = 0; i < samples.length; i++) {
-    sample = samples[i];
-    if ((prevSample < 0) && (sample >= prevSample) && (sample >= 0)) {
+    sample = samples[i] + offset;
+    boolean mark = false;
+    if (risingEdge)
+      mark = (prevSample < 0) && (sample >= prevSample) && (sample >= 0);
+    else
+      mark = (prevSample > 0) && (sample <= prevSample) && (sample <= 0);
+    if (mark) {
       value = i - last;
       last = i;
       runs[runCount++] = value;
