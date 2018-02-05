@@ -33,12 +33,12 @@ The data bits are ordered as least significant bit first.
 A program may be preceded by multiple 0 bits for synchronization, until the first start bit.
 
 ## RCA Coin Arcade Games and FRED Tape Encoding
-The COSMAC FRED 2/Arcade Game tapes sound data use two cycles of 2000 HZ to represent a 0 bit, 
+The RCA COSMAC FRED 2/Arcade Game tapes sound data use two cycles of 2000 HZ to represent a 0 bit, 
 and five cycles of 2000 HZ to represent a 1 bit.
 This tape format uses even data parity.
 
-## COSMAC VIP Tape Encoding
-The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit, 
+## RCA COSMAC VIP Tape Encoding
+The RCA COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit, 
 and one cycle of 800 HZ to represent a 1 bit.
 This tape format uses odd data parity.
 
@@ -46,8 +46,9 @@ This tape format uses odd data parity.
 
 ![Screenshot of Data Waveform in Audacity](screenshot/waveform.png)
 
-The above screenshot example of Arcade/FRED waveform data is a "01010010101". In the waveform example the first "1" bit is a start bit, 
-and is followed by 8 data bits, and the waveform ends with a "1" parity bit (even parity).
+The above screenshot example of RCA Arcade/FRED waveform data is a "01010010101". 
+In the waveform example the first "1" bit is a start bit, and is followed by 8 data bits, 
+and the waveform ends with a "1" parity bit (even parity).
 The data byte value is hexadecimal "52" (least significant bits first). 
 This example assumes preceeding "0" bits before the first data byte.
 
