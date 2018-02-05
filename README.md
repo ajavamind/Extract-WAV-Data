@@ -35,12 +35,12 @@ A program may be preceded by multiple 0 bits for synchronization, until the firs
 ## RCA Coin Arcade Games and FRED Tape Encoding
 The COSMAC FRED 2/Arcade Game tapes sound data use two cycles of 2000 HZ to represent a 0 bit, 
 and five cycles of 2000 HZ to represent a 1 bit.
-This tape format uses even parity.
+This tape format uses even data parity.
 
 ## COSMAC VIP Tape Encoding
 The COSMAC VIP program data tapes use one cycle of 2000 HZ to represent a 0 bit, 
 and one cycle of 800 HZ to represent a 1 bit.
-This tape format uses odd parity.
+This tape format uses odd data parity.
 
 ## Example Data Waveform in Audacity Sound Editor
 
@@ -51,13 +51,19 @@ and is followed by 8 data bits, and the waveform ends with a "1" parity bit (eve
 The data byte value is hexadecimal "52" (least significant bits first). 
 This example assumes preceeding "0" bits before the first data byte.
 
-## Using Audacity Video
-Here is a link to video explaining how I used Audacity to help with the WAV data extraction process.
-There are easier ways to use Audacity but the steps I talk about in the video get the job done.
-I noticed some tapes only have 2047 bytes stored, so the 2048th byte is sometimes interpreted as garbage,
-depending on how the trailing audio is trimmed.
+## Video Showing How To Use Audacity
 
-After isolating a single program segment, sometimes the waveform needs to be improved. Here are two possible choices depending on the digitized source:
+https://youtu.be/AfX4LBK-_JA
+
+Here is a link to video explaining how I used Audacity to help with the necessary WAV data extraction process.
+There are easier shortcuts (such as trim) when using Audacity but the steps I talk about in the video get the job done.
+
+## Extraction Procedure
+
+You have to look at the waveform in Audacity to determine if the tape date encoding is either FRED2/Arcade or VIP formatted data.
+Once you know that you can set a parameter variable in the code.
+
+After isolating a single program segment, often the waveform needs enhancing. Here are at least two possible choices depending on the digitized source:
 
 1. Use Audacity Effect options to Normalize Arcade and FRED format data to remove DC offset 
 and set maximum amplification level -4.0 dB.  
@@ -71,7 +77,12 @@ when exporting a raw PCM data files. In Audacity to save a __signed 8-bit PCM ra
 Use File->Export->Export As WAV, then change "save as type" to "other uncompressed files".
 Pick raw (headerless) and signed 8-bit PCM data.
 
-https://youtu.be/AfX4LBK-_JA
+## Notes
+
+1. I noticed some tapes only have 2047 bytes stored, so the 2048th byte is sometimes interpreted as garbage (manifested as a parity error, depending on how the trailing audio is trimmed. The last byte is probably correct despite the parity error.
+2. Several programs may be stored sequentially in the WAV file. You have to isolate and extract each program individually.
+3. A program may be stored as a variable number of 256 byte pages. The size of the code is not always fixed at 2048 bytes. If you do not know the number of pages, start with a ROM size of 2048 bytes and by trial and error decrease (multiples of 256 byte pages) until you do not see errors and the size makes sense.
+4. Apparently some VIP tapes may have been recorded with phase reversals as pointed out in the RCA COSMAC VIP Instruction Manual documentation posted by Herb Johnson at http://www.retrotechnology.com/restore/VIP%20Tape%20Format.html To solve this issue there is a phase boolean variable that has to be changed to successfully extract a program from this kind of frequency phase shifted recording.
 
 ## References
 Written by Andy Modla
